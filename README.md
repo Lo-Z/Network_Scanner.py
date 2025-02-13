@@ -1,7 +1,7 @@
 # Network_Scanner.py
 A Windows network scanner that collects Hostname - IP - MAC - Manufacture - NIC type (sometimes) and adds it to a .txt file on your desktop. 
 _____________________________________________________________________________
-~<(-.-)>~                                                          ~<(-.-)>~
+~ <(-.-)> ~ 
 Just messing around with Python, this mimics Angry IP scanner without the GUI. 
 _____________________________________________________________________________
 
