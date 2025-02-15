@@ -11,3 +11,6 @@ Get-NetIPAddress retrieves the local machine’s IP address dynamically.
       Ensures a fresh scan every time → No lingering jobs from previous runs.
         Dynamically detects the subnet → Works on any network without hardcoding.
           Uses Get-NetNeighbor to collect all devices that are now cached.
+
+
+Network_Scanner.py is now v2.0 and will work in a corporate environments. It incorporates OneDrive directories for company computers and allows admins to dump DNS and APR caches to remove old IP's and networked devices from showing in new scans.
