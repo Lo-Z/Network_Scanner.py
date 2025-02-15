@@ -1,15 +1,71 @@
+# ~ <(-.-)> ~ <(-.-)> ~ <(-.-)> ~ <(-.-)> ~ <(-.-)> ~ <(-.-)> ~ <(-.-)> ~ <(-.-)> ~ <(-.-)> ~ <(-.-)> ~
+#
+# Network_Scanner 2.0 will look for App IPs and MACs on a network and drop its output in a notepad txt file on the Desktop
+# Developed originally for Audiovisual & Network Administration and finding devices on a network 
+# Corporate computers that use a OneDrive couldn't run the original 1.11 release, thus an update was required
+#
+# Arp Cache Dump requires Admin Priv, else the scan may show old cached IPs from a prior network 
+#
+# ~ <(-.-)> ~ <(-.-)> ~ <(-.-)> ~ <(-.-)> ~ <(-.-)> ~ <(-.-)> ~ <(-.-)> ~ <(-.-)> ~ <(-.-)> ~ <(-.-)> ~
+
+# Version 2.0 (working model)
+
 import subprocess
 import os
+import glob
+import ctypes
 
-# Version 1.11 (working model)
-
-# Get the desktop path dynamically
-desktop_path = os.path.join(os.path.expanduser("~"), "Desktop", "network_results.txt")
 print("Getting Computer Info")
+# Get the base user profile directory
+user_profile = os.path.expanduser("~")
+
+# Possible desktop paths
+standard_desktop = os.path.join(user_profile, "Desktop")
+onedrive_desktop = os.path.join(user_profile, "OneDrive", "Desktop")
+
+# Detect corporate OneDrive dynamically
+corporate_onedrive_dirs = glob.glob(os.path.join(user_profile, "OneDrive -*"))
+corporate_onedrive_desktop = None
+
+for corp_dir in corporate_onedrive_dirs:
+    possible_desktop = os.path.join(corp_dir, "Desktop")
+    if os.path.exists(possible_desktop):
+        corporate_onedrive_desktop = possible_desktop
+        break  # Stop after finding the correct one
+
+# Choose the correct desktop path
+if os.path.exists(standard_desktop):
+    desktop_path = os.path.join(standard_desktop, "network_results.txt")
+elif os.path.exists(onedrive_desktop):
+    desktop_path = os.path.join(onedrive_desktop, "network_results.txt")
+elif corporate_onedrive_desktop:
+    desktop_path = os.path.join(corporate_onedrive_desktop, "network_results.txt")
+else:
+    raise FileNotFoundError("Could not find a valid Desktop directory.")
 
 # Ensures no previous jobs exist
 close_all_jobs = subprocess.run(["powershell", "-Command", "Get-Job | Remove-Job -Force"], shell=True)  
 print("Preping Background Scan")
+
+# Function to check if running as admin
+def is_admin():
+    try:
+        return ctypes.windll.shell32.IsUserAnAdmin()
+    except:
+        return False
+
+# Ask user if they want to flush DNS
+clear_dns = input("Do you want to flush DNS & APR cache? You might see old IPs if you don't. Admins Only (y/n): ").strip().lower()
+if clear_dns == "y":
+    subprocess.run(["powershell", "-Command", "ipconfig /flushdns"], shell=True)
+    
+    if is_admin():
+        subprocess.run(["powershell", "-Command", "arp -d *"], shell=True)  # Clears ARP table
+        subprocess.run(["powershell", "-Command", "netsh interface ip delete arpcache"], shell=True)  # Resets ARP cache
+        print("DNS and ARP cache flushed successfully!")
+    else:
+        print("Skipping ARP cache clearing. Run as administrator to clear ARP entries.")
+
 
 # pinging all IPs to Cache
 ping_em_all = subprocess.run([
